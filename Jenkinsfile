@@ -48,7 +48,7 @@ pipeline {
       steps {
         sh "docker context use default"
         sh 'aws ecr get-login-password --region $ECR_REGION --profile joshua | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com'
-        sh "export $(xargs < .env) && docker build -t ${DOCKER_IMAGE} ."
+        sh "source .env && docker build -t ${DOCKER_IMAGE} ."
       }
     }
     stage("Upstream Artifact to ECR") {
