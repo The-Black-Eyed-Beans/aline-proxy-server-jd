@@ -14,10 +14,14 @@ services:
       - BANK_SERVICE=${BANK_SERVICE}
     networks:
       - default
+      - public
 networks:
   default:
     external: true
     name: ${SECUTIRY_GROUP}
+  public:
+    external: true
+    name: ${PUBLIC_SECUTIRY_GROUP}
 
 x-aws-cloudformation:
   Resources:
