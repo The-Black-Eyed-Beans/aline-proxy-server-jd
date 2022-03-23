@@ -48,7 +48,7 @@ pipeline {
       steps {
         sh "docker context use default"
         sh 'aws ecr get-login-password --region $ECR_REGION --profile joshua | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com'
-        sh "source .env && docker build -t ${DOCKER_IMAGE} ."
+        sh ". ./.env && docker build -t ${DOCKER_IMAGE} ."
       }
     }
     stage("Upstream Artifact to ECR") {
@@ -62,7 +62,7 @@ pipeline {
     stage("Deploy to ECS"){
       steps {
         sh "docker context use prod-jd"
-        sh "docker compose -p $DOCKER_IMAGE --env-file .env up -d"
+        sh "docker compose -p proxy --env-file ./.env up -d"
       }
     } 
   }

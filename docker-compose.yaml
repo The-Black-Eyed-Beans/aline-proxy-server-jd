@@ -1,0 +1,29 @@
+version: "3.9"
+
+x-aws-vpc: ${VPC}
+x-aws-cluster: ${CLUSTER}
+
+services:
+  proxy-server:
+    image: $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/proxy-server-jd:latest
+    environment:
+      - USER_SERVICE=${USER_SERVICE}
+      - UNDERWRITER_SERVICE=${UNDERWRITER_SERVICE}
+      - ACCOUNT_SERVICE=${ACCOUNT_SERVICE}
+      - TRANSACTION_SERVICE=${TRANSACTION_SERVICE}
+      - BANK_SERVICE=${BANK_SERVICE}
+    networks:
+      - default
+networks:
+  default:
+    external: true
+    name: ${SECUTIRY_GROUP}
+
+x-aws-cloudformation:
+  Resources:
+    ProxyserverService:
+      Properties:
+        NetworkConfiguration:
+          AwsvpcConfiguration:
+            Subnets:
+              - ${SUBNET}
