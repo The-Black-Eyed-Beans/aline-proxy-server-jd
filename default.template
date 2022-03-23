@@ -1,0 +1,49 @@
+server {
+    listen 8070;
+
+    server_name localhost;
+
+    location / {
+        proxy_pass http://${USER_SERVICE}/;
+    }
+}
+
+server {
+    listen 8071;
+
+    server_name localhost;
+
+    location / {
+        proxy_pass http://${UNDERWRITER_SERVICE}/;
+    }
+}
+
+server {
+    listen 8072;
+
+    server_name localhost;
+
+    location / {
+        proxy_pass http://${ACCOUNT_SERVICE}/;
+    }
+}
+
+server {
+    listen 8073;
+
+    server_name localhost;
+
+    location / {
+        proxy_pass http://${TRANSACTION_SERVICE}/;
+    }
+}
+
+server {
+    listen 8083;
+
+    server_name localhost;
+
+    location / {
+        proxy_pass http://${BANK_SERVICE}/;
+    }
+}
