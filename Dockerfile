@@ -2,7 +2,7 @@ FROM nginx
 
 ENV USER_SERVICE=user-microservice.user.local
 ENV UNDERWRITER_SERVICE=underwriter-microservice.underwriter.local
-ENV ACCOUNT_SERVICE=account.account-microservice.local
+ENV ACCOUNT_SERVICE=account-microservice.account.local
 ENV TRANSACTION_SERVICE=transaction-microservice.transaction.local
 ENV BANK_SERVICE=bank-microservice.bank.local
 
