@@ -29,14 +29,23 @@ pipeline {
     stage("Construct Environment") {
       steps {
         sh """aws secretsmanager  get-secret-value --secret-id proxy-server-secrets --region us-east-2 --profile joshua | jq -r '.["SecretString"]' | jq '.' > secrets"""
+        sh """aws secretsmanager  get-secret-value --secret-id prod/services --region us-east-2 --profile joshua | jq -r '.["SecretString"]' | jq '.' > secrets.env"""
         script {
           secretKeys = sh(script: 'cat secrets | jq "keys"', returnStdout: true).trim()
           secretValues = sh(script: 'cat secrets | jq "values"', returnStdout: true).trim()
+          secretKeys2 = sh(script: 'cat secrets.env | jq "keys"', returnStdout: true).trim()
+          secretValues2 = sh(script: 'cat secrets.env | jq "values"', returnStdout: true).trim()
           def parser = new JsonSlurper()
           def keys = parser.parseText(secretKeys)
           def values = parser.parseText(secretValues)
+          def keys2 = parser.parseText(secretKeys2)
+          def values2 = parser.parseText(secretValues2)
           for (key in keys) {
               def val="${key}=${values[key]}"
+              data += "${val}\n"
+          }
+          for (key in keys2) {
+              def val="${key}=${values2[key]}"
               data += "${val}\n"
           }
         }
