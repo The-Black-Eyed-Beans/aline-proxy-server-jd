@@ -31,3 +31,4 @@ x-aws-cloudformation:
           AwsvpcConfiguration:
             Subnets:
               - ${SUBNET_ONE}
+              - ${SUBNET_TWO}
