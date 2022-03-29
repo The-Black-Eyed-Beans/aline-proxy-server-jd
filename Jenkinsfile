@@ -35,20 +35,8 @@ pipeline {
         echo "Performing health checks..."
       } 
     }
-    stage("Construct Environment") {
-      environment {
-        VPC = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["vpc_id"]["value"]'""", returnStdout: true).trim()} "
-        CLUSTER = "${sh(script: """cat ecs.json | jq -r '.["cluster"]["value"]'""", returnStdout: true).trim()}"
-        USER_SERVICE = "user-microservice.user-jd.local"
-        UNDERWRITER_SERVICE = "underwriter-microservice.underwriter-jd.local"
-        ACCOUNT_SERVICE = "account-microservice.account-jd.local"
-        TRANSACTION_SERVICE = "transaction-microservice.transaction-jd.local"
-        BANK_SERVICE = "bank-microservice.bank-jd.local"
-        SG_PRIVATE = "${sh(script: """cat sg.json | jq -r '.["private"]'""", returnStdout: true).trim()}"
-        SG_PUBLIC = "${sh(script: """cat sg.json | jq -r '.["public"]'""", returnStdout: true).trim()}"
-        SUBNET_ONE = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][0]'""", returnStdout: true).trim()}"
-        SUBNET_TWO = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][1]'""", returnStdout: true).trim()}"
-      }
+    // stage("Construct Environment") {
+      
       // steps {
         
 
@@ -76,8 +64,21 @@ pipeline {
         // sh "rm -f .env && touch .env"
         // writeFile(file: '.env', text: data)
       // }
-    }   
+    // }   
     stage("Build Artifact") {
+      environment {
+        VPC = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["vpc_id"]["value"]'""", returnStdout: true).trim()} "
+        CLUSTER = "${sh(script: """cat ecs.json | jq -r '.["cluster"]["value"]'""", returnStdout: true).trim()}"
+        USER_SERVICE = "user-microservice.user-jd.local"
+        UNDERWRITER_SERVICE = "underwriter-microservice.underwriter-jd.local"
+        ACCOUNT_SERVICE = "account-microservice.account-jd.local"
+        TRANSACTION_SERVICE = "transaction-microservice.transaction-jd.local"
+        BANK_SERVICE = "bank-microservice.bank-jd.local"
+        SG_PRIVATE = "${sh(script: """cat sg.json | jq -r '.["private"]'""", returnStdout: true).trim()}"
+        SG_PUBLIC = "${sh(script: """cat sg.json | jq -r '.["public"]'""", returnStdout: true).trim()}"
+        SUBNET_ONE = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][0]'""", returnStdout: true).trim()}"
+        SUBNET_TWO = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][1]'""", returnStdout: true).trim()}"
+      }
       steps {
         sh "docker context use default"
         sh 'aws ecr get-login-password --region $ECR_REGION --profile joshua | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com'
