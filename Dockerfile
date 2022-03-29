@@ -1,10 +1,10 @@
 FROM nginx
 
-ENV ACCOUNT_SERVICE=${ACCOUNT_SERVICE}
-ENV BANK_SERVICE=${BANK_SERVICE}
-ENV TRANSACTION_SERVICE=${TRANSACTION_SERVICE}
-ENV UNDERWRITER_SERVICE=${UNDERWRITER_SERVICE}
-ENV USER_SERVICE=${USER_SERVICE}
+ENV ACCOUNT_SERVICE=account-microservice.account-jd.local
+ENV BANK_SERVICE=bank-microservice.bank-jd.local
+ENV TRANSACTION_SERVICE=transaction-microservice.transaction-jd.local
+ENV UNDERWRITER_SERVICE=underwriter-microservice.underwriter-jd.local
+ENV USER_SERVICE=user-microservice.user-jd.local
 
 RUN rm /etc/nginx/conf.d/default.conf
 COPY ./default.template /etc/nginx/conf.d/default.template
