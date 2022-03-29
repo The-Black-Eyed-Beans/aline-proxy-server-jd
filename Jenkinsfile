@@ -49,7 +49,7 @@ pipeline {
         SUBNET_ONE = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][0]'""", returnStdout: true).trim()}"
         SUBNET_TWO = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][1]'""", returnStdout: true).trim()}"
       }
-      steps {
+      // steps {
         
 
         // sh """aws secretsmanager  get-secret-value --secret-id proxy-server-secrets --region us-east-2 --profile joshua | jq -r '.["SecretString"]' | jq '.' > secrets"""
@@ -75,7 +75,7 @@ pipeline {
         // }
         // sh "rm -f .env && touch .env"
         // writeFile(file: '.env', text: data)
-      }
+      // }
     }   
     stage("Build Artifact") {
       steps {
