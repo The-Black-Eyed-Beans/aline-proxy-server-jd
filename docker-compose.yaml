@@ -18,10 +18,10 @@ services:
 networks:
   default:
     external: true
-    name: ${SECUTIRY_GROUP}
+    name: ${SG_PRIVATE}
   public:
     external: true
-    name: ${PUBLIC_SECUTIRY_GROUP}
+    name: ${SG_PUBLIC}
 
 x-aws-cloudformation:
   Resources:
@@ -30,4 +30,5 @@ x-aws-cloudformation:
         NetworkConfiguration:
           AwsvpcConfiguration:
             Subnets:
-              - ${SUBNET}
+              - ${SUBNET_ONE}
+              - ${SUBNET_TWO}
