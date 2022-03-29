@@ -22,11 +22,13 @@ pipeline {
 
   stages {
     stage("Init") {
-      sh 'aws s3 cp s3://beb-bucket-jd/terraform/vpc-output.json vpc-output.json --quiet --profile $AWS_PROFILE'
-      sh 'aws s3 cp s3://beb-bucket-jd/terraform/ecs-output.json ecs-output.json --quiet --profile $AWS_PROFILE'
-      sh """cat ecs-output.json | jq '.["outputs"]' > ecs.json"""
-      sh """cat ecs.json| jq '.["security_groups"]["value"]' | jq 'map({(.name): .id}) | add' > sg.json"""
-      sh """cat ecs-output.json | jq '.["service_secrets"]["value"]' | jq 'map({(.name): .arn}) | add' > secrets.json"""
+      steps {
+        sh 'aws s3 cp s3://beb-bucket-jd/terraform/vpc-output.json vpc-output.json --quiet --profile $AWS_PROFILE'
+        sh 'aws s3 cp s3://beb-bucket-jd/terraform/ecs-output.json ecs-output.json --quiet --profile $AWS_PROFILE'
+        sh """cat ecs-output.json | jq '.["outputs"]' > ecs.json"""
+        sh """cat ecs.json| jq '.["security_groups"]["value"]' | jq 'map({(.name): .id}) | add' > sg.json"""
+        sh """cat ecs-output.json | jq '.["service_secrets"]["value"]' | jq 'map({(.name): .arn}) | add' > secrets.json"""
+      }
     }
     stage("Test") {
       steps {
