@@ -18,15 +18,6 @@ pipeline {
   }
 
   stages {
-    stage("Init") {
-      steps {
-        sh 'aws s3 cp s3://beb-bucket-jd/terraform/vpc-output.json vpc-output.json --quiet --profile $AWS_PROFILE'
-        sh 'aws s3 cp s3://beb-bucket-jd/terraform/ecs-output.json ecs-output.json --quiet --profile $AWS_PROFILE'
-        sh """cat ecs-output.json | jq '.["outputs"]' > ecs.json"""
-        sh """cat ecs.json| jq '.["security_groups"]["value"]' | jq 'map({(.name): .id}) | add' > sg.json"""
-        sh """cat ecs.json | jq '.["service_secrets"]["value"]' | jq 'map({(.name): .arn}) | add' > secrets.json"""
-      }
-    }
     stage("Test") {
       steps {
         echo "Performing health checks..."
@@ -47,23 +38,37 @@ pipeline {
         sh 'docker push $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:latest'
       }
     }
-    stage("Deploy to ECS"){
+    stage("Fetch Environment Variables"){
+      steps {
+        script {
+          try{
+            sh "aws lambda invoke --function-name getProxyServerEnv data.json --profile $AWS_PROFILE"
+          }catch (Exception e){
+            currentBuild.result = "ABORTED"
+            error("Failed to get environment variables! Someone should be alerted! =O")
+          }
+        }
+      }
+    }
+    stage("Update Proxy Server Service"){
       environment {
-        VPC = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["vpc_id"]["value"]'""", returnStdout: true).trim()}"
-        CLUSTER = "${sh(script: """cat ecs.json | jq -r '.["cluster"]["value"]'""", returnStdout: true).trim()}"
-        USER_SERVICE = "user-microservice.user-jd.local"
-        UNDERWRITER_SERVICE = "underwriter-microservice.underwriter-jd.local"
-        ACCOUNT_SERVICE = "account-microservice.account-jd.local"
-        TRANSACTION_SERVICE = "transaction-microservice.transaction-jd.local"
-        BANK_SERVICE = "bank-microservice.bank-jd.local"
-        SG_PRIVATE = "${sh(script: """cat sg.json | jq -r '.["private"]'""", returnStdout: true).trim()}"
-        SG_PUBLIC = "${sh(script: """cat sg.json | jq -r '.["public"]'""", returnStdout: true).trim()}"
-        SUBNET_ONE = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][0]'""", returnStdout: true).trim()}"
-        SUBNET_TWO = "${sh(script: """cat vpc-output.json | jq -r '.["outputs"]["private_subnets"]["value"][1]'""", returnStdout: true).trim()}"
+        CLUSTER = "${sh(script: """cat data.json | jq -r '.["cluster"]'""", returnStdout: true).trim()}"
+        SG_PRIVATE = "${sh(script: """cat data.json | jq -r '.["private"]'""", returnStdout: true).trim()}"
+        SG_PUBLIC = "${sh(script: """cat data.json | jq -r '.["public"]'""", returnStdout: true).trim()}"
+        SUBNET_ONE = "${sh(script: """cat data.json | jq -r '.["private_subnets"][0]'""", returnStdout: true).trim()}"
+        SUBNET_TWO = "${sh(script: """cat data.json | jq -r '.["private_subnets"][0]'""", returnStdout: true).trim()}"
+        VPC = "${sh(script: """cat data.json | jq -r '.["vpc_id"]'""", returnStdout: true).trim()}"
       }
       steps {
         sh "docker context use prod-jd"
-        sh "docker compose -p proxy-server up -d"
+        script {
+          try{
+            sh "docker compose -p proxy-server up -d"
+          }catch (Exception e){
+            currentBuild.result = "ABORTED"
+            error("Failed to update service! Someone should be alerted! =O")
+          }
+        }
       }
     } 
   }
