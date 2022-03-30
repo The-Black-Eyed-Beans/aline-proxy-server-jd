@@ -52,12 +52,12 @@ pipeline {
     }
     stage("Update Proxy Server Service"){
       environment {
-        CLUSTER = "${sh(script: """cat data.json | jq -r '.["CLUSTER"]'""", returnStdout: true).trim()}"
-        SG_PRIVATE = "${sh(script: """cat data.json | jq -r '.["SG_PRIVATE"]'""", returnStdout: true).trim()}"
-        SG_PUBLIC = "${sh(script: """cat data.json | jq -r '.["SG_PUBLIC"]'""", returnStdout: true).trim()}"
-        SUBNET_ONE = "${sh(script: """cat data.json | jq -r '.["SUBNET_ONE"]'""", returnStdout: true).trim()}"
-        SUBNET_TWO = "${sh(script: """cat data.json | jq -r '.["SUBNET_TWO"]'""", returnStdout: true).trim()}"
-        VPC = "${sh(script: """cat data.json | jq -r '.["VPC"]'""", returnStdout: true).trim()}"
+        CLUSTER = "${sh(script: """cat data.json | jq -r '.["body"]["CLUSTER"]'""", returnStdout: true).trim()}"
+        SG_PRIVATE = "${sh(script: """cat data.json | jq -r '.["body"]["SG_PRIVATE"]'""", returnStdout: true).trim()}"
+        SG_PUBLIC = "${sh(script: """cat data.json | jq -r '.["body"]["SG_PUBLIC"]'""", returnStdout: true).trim()}"
+        SUBNET_ONE = "${sh(script: """cat data.json | jq -r '.["body"]["SUBNET_ONE"]'""", returnStdout: true).trim()}"
+        SUBNET_TWO = "${sh(script: """cat data.json | jq -r '.["body"]["SUBNET_TWO"]'""", returnStdout: true).trim()}"
+        VPC = "${sh(script: """cat data.json | jq -r '.["body"]["VPC"]'""", returnStdout: true).trim()}"
       }
       steps {
         sh "docker context use prod-jd"
