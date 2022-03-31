@@ -32,7 +32,7 @@ pipeline {
     }
     stage("Fetch Environment Variables"){
       steps {
-        sh "aws lambda invoke --function-name getServiceEnv env --profile $AWS_PROFILE"
+        sh "aws lambda invoke --function-name getProxyServerEnv env --profile $AWS_PROFILE"
         createEnvFile()
       }
     }
