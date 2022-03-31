@@ -4,11 +4,9 @@ pipeline {
       label "worker-one"
     }
   }
-
-  tools {
-    maven 'Maven'
+  parameters {
+    booleanParam(name: "IS_TESTING", defaultValue: "true", description: "Set to false to skip testing, default true!")
   }
-
   environment {
     AWS_ACCOUNT_ID = credentials("AWS_ACCOUNT_ID")
     AWS_PROFILE = credentials("AWS_PROFILE")
@@ -20,62 +18,64 @@ pipeline {
   stages {
     stage("Test") {
       steps {
-        echo "Performing health checks..."
+        script {
+          if (params.IS_TESTING) {
+            echo "We should perform some health checks!"
+          }
+        }
       } 
-    }
-    stage("Build Artifact") {
+    }   
+    stage("Upstream to ECR") {
       steps {
-        sh "docker context use default"
-        sh 'aws ecr get-login-password --region $ECR_REGION --profile joshua | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com'
-        sh "docker build -t ${DOCKER_IMAGE} ."
-      }
-    }
-    stage("Upstream Artifact to ECR") {
-      steps {
-        sh 'docker tag $DOCKER_IMAGE:latest $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:$COMMIT_HASH'
-        sh 'docker tag $DOCKER_IMAGE:latest $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:latest'
-        sh 'docker push $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:$COMMIT_HASH'
-        sh 'docker push $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:latest'
+        upstreamToECR()
       }
     }
     stage("Fetch Environment Variables"){
       steps {
-        script {
-          try{
-            sh "aws lambda invoke --function-name getProxyServerEnv data.json --profile $AWS_PROFILE"
-          }catch (Exception e){
-            currentBuild.result = "ABORTED"
-            error("Failed to get environment variables! Someone should be alerted! =O")
-          }
-        }
+        sh "aws lambda invoke --function-name getServiceEnv env --profile $AWS_PROFILE"
+        createEnvFile()
       }
     }
-    stage("Update Proxy Server Service"){
-      environment {
-        CLUSTER = "${sh(script: """cat data.json | jq -r '.["body"]["CLUSTER"]'""", returnStdout: true).trim()}"
-        SG_PRIVATE = "${sh(script: """cat data.json | jq -r '.["body"]["SG_PRIVATE"]'""", returnStdout: true).trim()}"
-        SG_PUBLIC = "${sh(script: """cat data.json | jq -r '.["body"]["SG_PUBLIC"]'""", returnStdout: true).trim()}"
-        SUBNET_ONE = "${sh(script: """cat data.json | jq -r '.["body"]["SUBNET_ONE"]'""", returnStdout: true).trim()}"
-        SUBNET_TWO = "${sh(script: """cat data.json | jq -r '.["body"]["SUBNET_TWO"]'""", returnStdout: true).trim()}"
-        VPC = "${sh(script: """cat data.json | jq -r '.["body"]["VPC"]'""", returnStdout: true).trim()}"
-      }
+    stage("Deploy to ECS"){
       steps {
         sh "docker context use prod-jd"
         script {
           try{
-            sh "docker compose -p proxy-server up -d"
+            sh "docker compose -p $DOCKER_IMAGE-jd --env-file service.env up -d"
           }catch (Exception e){
             currentBuild.result = "ABORTED"
             error("Failed to update service! Someone should be alerted! =O")
           }
         }
       }
-    } 
+    }
   }
   post {
     cleanup {
-      sh "rm -rf ./*"
-      sh "docker context use default && docker image prune -af"
+      script {
+        sh "docker context use default"
+        sh "rm -rf ./*"
+        sh "docker image prune -af"
+      }
     }
+  }
+}
+
+def createEnvFile() {
+  def env = sh(returnStdout: true, script: """cat ./env | jq '.["body"]'""").trim()
+  env = sh(returnStdout: true, script: """echo ${env} | base64 --decode""").trim()
+  writeFile file: 'service.env', text: env
+}
+
+def upstreamToECR() {
+  if (params.IS_DEPLOYING) {
+    sh "cp $DOCKER_IMAGE-microservice/target/*.jar ."
+    sh "docker context use default"
+    sh 'aws ecr get-login-password --region $ECR_REGION --profile joshua | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com'
+    sh "docker build -t ${DOCKER_IMAGE} ."
+    sh 'docker tag $DOCKER_IMAGE:latest $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:$COMMIT_HASH'
+    sh 'docker tag $DOCKER_IMAGE:latest $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:latest'
+    sh 'docker push $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:$COMMIT_HASH'
+    sh 'docker push $AWS_ACCOUNT_ID.dkr.ecr.$ECR_REGION.amazonaws.com/$DOCKER_IMAGE-jd:latest'
   }
 }
